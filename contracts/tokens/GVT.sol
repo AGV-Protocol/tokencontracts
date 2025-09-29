@@ -19,7 +19,7 @@ contract GVT is ERC20, ERC20Burnable, ERC20Permit, ERC20Pausable, AccessControl 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
-    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10 ** 18;
+    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10 ** 18; // 1 billion tokens with 18 decimals
 
     // Allocation tracking for transparency
     struct Allocation {
@@ -73,16 +73,16 @@ contract GVT is ERC20, ERC20Burnable, ERC20Permit, ERC20Pausable, AccessControl 
      * @notice Release vested tokens according to linear vesting schedule
      */
     function releaseVested() external whenNotPaused {
-        Allocation storage alloc = allocations[msg.sender];
-        require(alloc.amount > 0, "No allocation");
+        Allocation storage allocation = allocations[msg.sender];
+        require(allocation.amount > 0, "No allocation");
 
-        uint256 releasable = _releasableAmount(alloc);
+        uint256 releasable = _releasableAmount(allocation);
         require(releasable > 0, "Nothing to release");
 
         // Ensure the hard cap is respected at release time
         require(totalSupply() + releasable <= MAX_SUPPLY, "Cap exceeded");
 
-        alloc.released += releasable;
+        allocation.released += releasable;
         // Outstanding pool decreases by amount released
         allocatedOutstanding -= releasable;
 
@@ -140,6 +140,7 @@ contract GVT is ERC20, ERC20Burnable, ERC20Permit, ERC20Pausable, AccessControl 
         emit Unpaused(_msgSender());
     }
 
+    /* Overrides required by Solidity for multiple inheritance */
     function _update(address from, address to, uint256 value) internal override(ERC20, ERC20Pausable) {
         super._update(from, to, value);
     }
