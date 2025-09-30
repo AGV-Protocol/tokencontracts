@@ -129,7 +129,7 @@ contract GVT is ERC20, ERC20Burnable, ERC20Permit, ERC20Pausable, AccessControl 
      */
     function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
-        emit Paused(_msgSender());
+        emit PausedEvent(_msgSender());
     }
 
     /**
@@ -137,7 +137,7 @@ contract GVT is ERC20, ERC20Burnable, ERC20Permit, ERC20Pausable, AccessControl 
      */
     function unpause() external onlyRole(PAUSER_ROLE) {
         _unpause();
-        emit Unpaused(_msgSender());
+        emit UnpausedEvent(_msgSender());
     }
 
     /* Overrides required by Solidity for multiple inheritance */
