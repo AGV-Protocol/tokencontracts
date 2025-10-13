@@ -17,9 +17,9 @@ import "@openzeppelin/contracts/security/Pausable.sol";
  * - Execution via multisig (5/9 recommended)
  */
 contract DAOController is AccessControl, Pausable {
-    bytes32 public constant PROPOSER_ROLE = keccak256("PROPOSER_ROLE");
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
+    bytes32 public constant PROPOSER_ROLE = keccak256("PROPOSER_ROLE"); // Role for creating proposals. can be open to all GVT stakers
+    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE"); // Role for executing queued proposals
+    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE"); // Role for emergency actions
 
     // Proposal states
     enum ProposalState {
@@ -244,6 +244,7 @@ contract DAOController is AccessControl, Pausable {
     /**
      * @notice Cancel proposal
      * @param proposalId Proposal to cancel
+     * @dev Can be called by proposer or guardian
      */
     function cancel(uint256 proposalId) external {
         Proposal storage proposal = proposals[proposalId];
@@ -256,6 +257,9 @@ contract DAOController is AccessControl, Pausable {
 
     /**
      * @notice Get proposal state
+     * @param proposalId Proposal ID
+     * @return ProposalState Current state
+     * @dev Simplified - does not check proposer voting power
      */
     function state(uint256 proposalId) public view returns (ProposalState) {
         Proposal storage proposal = proposals[proposalId];
@@ -290,7 +294,6 @@ contract DAOController is AccessControl, Pausable {
             // TODO: Check NFT balance
             return 1; // 1 vote per NFT
         }
-
         // For protocol-level decisions, check GVT stake
         // TODO: Check staked GVT balance
         return 1000 * 10 ** 18; // Placeholder
@@ -298,6 +301,12 @@ contract DAOController is AccessControl, Pausable {
 
     /**
      * @notice Update bonding curve parameters
+     * @param ratio New bonding ratio
+     * @param slope New bonding slope
+     * @param discount New bonding discount
+     * @param minVesting New minimum vesting days
+     * @param maxVesting New maximum vesting days
+     * @dev Ratio in rGGP per GVT, slope as ratio increase rate, discount in basis points
      */
     function updateBondingParams(uint256 ratio, uint256 slope, uint256 discount, uint256 minVesting, uint256 maxVesting)
         external
@@ -320,6 +329,9 @@ contract DAOController is AccessControl, Pausable {
 
     /**
      * @notice Update epoch configuration
+     * @param duration New epoch duration
+     * @param maxGVT New max GVT per epoch
+     * @dev Duration in seconds, maxGVT in token units
      */
     function updateEpochParams(uint256 duration, uint256 maxGVT) external onlyRole(EXECUTOR_ROLE) {
         require(duration > 0, "Invalid duration");
@@ -334,6 +346,10 @@ contract DAOController is AccessControl, Pausable {
 
     /**
      * @notice Update mint rates
+     *  @param solarRate New solar rate
+     * @param orchardRate New orchard rate
+     * @param computeRate New compute rate
+     * @dev Rates are in rGGP per unit (kWh, kg, hour)
      */
     function updateMintRates(uint256 solarRate, uint256 orchardRate, uint256 computeRate)
         external
@@ -365,6 +381,12 @@ contract DAOController is AccessControl, Pausable {
 
     /**
      * @notice Update governance settings
+     * @param _votingDelay New voting delay
+     * @param _votingPeriod New voting period
+     * @param _proposalThreshold New proposal threshold
+     * @param _quorumVotes New quorum votes
+     * @param _timelockDelay New timelock delay
+     * @dev All times in seconds, thresholds in token units
      */
     function updateGovernanceSettings(
         uint256 _votingDelay,
@@ -382,6 +404,7 @@ contract DAOController is AccessControl, Pausable {
 
     /**
      * @notice Set GVT token address
+     * @param _gvtToken GVT token contract address
      */
     function setGVTToken(address _gvtToken) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_gvtToken != address(0), "Invalid address");
@@ -390,6 +413,7 @@ contract DAOController is AccessControl, Pausable {
 
     /**
      * @notice Set NFT contract address
+     * @param _nftContract NFT contract address
      */
     function setNFTContract(address _nftContract) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_nftContract != address(0), "Invalid address");
@@ -398,6 +422,7 @@ contract DAOController is AccessControl, Pausable {
 
     /**
      * @notice Get proposal details
+     * @param proposalId Proposal ID
      */
     function getProposal(uint256 proposalId)
         external
