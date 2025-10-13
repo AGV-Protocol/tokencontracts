@@ -361,7 +361,7 @@ contract VestingVault is AccessControl, ReentrancyGuard {
      * @notice Get global statistics
      * @return allocated Total allocated across all categories
      * @return claimed Total claimed across all categories
-     * @return revoked Total revoked across all categories 
+     * @return revoked Total revoked across all categories
      * @return remaining Remaining unclaimed across all categories
      * @return vaultBalance Current token balance in vault
      * @dev View function, does not modify state
