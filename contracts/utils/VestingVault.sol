@@ -27,8 +27,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 contract VestingVault is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE"); // Role for managing admin functions
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE"); // Role for creating vesting schedules
 
     IERC20 public immutable token;
 
@@ -129,6 +129,13 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Create multiple vesting schedules in batch
+     * @param beneficiaries Array of beneficiary addresses
+     * @param amounts Array of total amounts to vest
+     * @param cliffMonths Array of cliff periods in months
+     * @param vestingMonths Array of total vesting durations in months
+     * @param revocable Array of revocability flags
+     * @param categories Array of allocation categories
+     * @dev All input arrays must be of equal length
      */
     function batchCreateVestingSchedules(
         address[] calldata beneficiaries,
@@ -153,6 +160,8 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Claim vested tokens for a specific schedule
+     * @param scheduleId Schedule ID to claim from
+     * @dev Beneficiary calls this function
      */
     function claim(uint256 scheduleId) external nonReentrant {
         VestingSchedule storage schedule = vestingSchedules[msg.sender][scheduleId];
@@ -173,6 +182,7 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Claim all vested tokens across all schedules
+     * @dev Beneficiary calls this function
      */
     function claimAll() external nonReentrant {
         uint256 totalClaimable = 0;
@@ -205,6 +215,9 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Calculate claimable amount for a schedule
+     * @param schedule Vesting schedule
+     * @return Claimable token amount
+     * @dev Internal helper function
      */
     function _calculateClaimable(VestingSchedule memory schedule) private view returns (uint256) {
         if (block.timestamp < schedule.startTime + schedule.cliffDuration) {
@@ -225,6 +238,9 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Revoke vesting schedule (for revocable schedules only)
+     * @param beneficiary Beneficiary address
+     * @param scheduleId Schedule ID to revoke
+     * @dev Only ADMIN_ROLE can call this function
      */
     function revokeVesting(address beneficiary, uint256 scheduleId) external onlyRole(ADMIN_ROLE) {
         VestingSchedule storage schedule = vestingSchedules[beneficiary][scheduleId];
@@ -246,6 +262,10 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get claimable amount for a schedule
+     * @param beneficiary Beneficiary address
+     * @param scheduleId Schedule ID
+     * @return Claimable token amount
+     * @dev View function, does not modify state
      */
     function getClaimable(address beneficiary, uint256 scheduleId) external view returns (uint256) {
         VestingSchedule memory schedule = vestingSchedules[beneficiary][scheduleId];
@@ -257,6 +277,9 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get total claimable across all schedules
+     * @param beneficiary Beneficiary address
+     * @return Total claimable token amount
+     * @dev View function, does not modify state
      */
     function getTotalClaimable(address beneficiary) external view returns (uint256) {
         uint256 totalClaimable = 0;
@@ -274,6 +297,8 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get schedule details
+     * @param beneficiary Beneficiary address
+     * @param scheduleId Schedule ID
      */
     function getSchedule(address beneficiary, uint256 scheduleId)
         external
@@ -307,6 +332,8 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get all schedules for beneficiary
+     * @param beneficiary Beneficiary address
+     * @return Array of VestingSchedule structs
      */
     function getScheduleCount(address beneficiary) external view returns (uint256) {
         return scheduleCount[beneficiary];
@@ -314,6 +341,11 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get category statistics
+     * @param category Category name
+     * @return allocated Total allocated to category
+     * @return claimed Total claimed from category
+     * @return remaining Remaining unclaimed in category
+     * @dev View function, does not modify state
      */
     function getCategoryStats(string memory category)
         external
@@ -327,6 +359,12 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get global statistics
+     * @return allocated Total allocated across all categories
+     * @return claimed Total claimed across all categories
+     * @return revoked Total revoked across all categories 
+     * @return remaining Remaining unclaimed across all categories
+     * @return vaultBalance Current token balance in vault
+     * @dev View function, does not modify state
      */
     function getGlobalStats()
         external
@@ -342,6 +380,8 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Deposit tokens into vault
+     * @param amount Amount of tokens to deposit
+     * @dev Operator role can call this function to fund the vault
      */
     function deposit(uint256 amount) external onlyRole(OPERATOR_ROLE) {
         require(amount > 0, "Amount must be > 0");
@@ -350,6 +390,9 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Emergency withdraw (admin only, for migration)
+     * @param to Recipient address
+     * @param amount Amount of tokens to withdraw
+     * @dev Only DEFAULT_ADMIN_ROLE can call this function
      */
     function emergencyWithdraw(address to, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(to != address(0), "Invalid recipient");
@@ -359,6 +402,9 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Helper to create standard team vesting (6mo cliff, 36mo linear)
+     * @param beneficiary Beneficiary address
+     * @param amount Total tokens to vest
+     * @return scheduleId Created schedule ID
      */
     function createTeamVesting(address beneficiary, uint256 amount)
         external
@@ -377,6 +423,10 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Helper to create strategic investor vesting (6mo cliff, 24mo linear)
+     * @param beneficiary Beneficiary address
+     * @param amount Total tokens to vest
+     * @return scheduleId Created schedule ID
+     * @dev Can be adjusted to 3mo cliff, 18mo linear if needed
      */
     function createStrategicVesting(address beneficiary, uint256 amount)
         external
@@ -395,6 +445,10 @@ contract VestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Helper to create public sale vesting (no cliff, 6mo linear)
+     * @param beneficiary Beneficiary address
+     * @param amount Total tokens to vest
+     * @return scheduleId Created schedule ID
+     * @dev No cliff, fully vested in 6 months
      */
     function createPublicVesting(address beneficiary, uint256 amount)
         external
