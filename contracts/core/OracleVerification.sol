@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 interface IrGGP {
     enum AssetType {
@@ -139,8 +140,10 @@ contract OracleVerification is AccessControl, Pausable {
         // Verify signature
         bytes32 messageHash = keccak256(abi.encodePacked(recipient, outputAmount, assetType, sourceId, timestamp));
 
-        bytes32 ethSignedHash = messageHash.toEthSignedMessageHash();
-        address recoveredSigner = ethSignedHash.recover(signature);
+
+        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        address recoveredSigner = ECDSA.recover(ethSignedHash, signature);
+
 
         if (recoveredSigner != source.signer) {
             source.failedSubmissions++;
