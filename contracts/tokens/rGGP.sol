@@ -128,7 +128,7 @@ contract rGGP is ERC20, ERC20Burnable, AccessControl, Pausable {
         require(!processedMints[mintId], "Mint already processed");
         require(mintRates[assetType].active, "Asset type not active");
         require(timestamp <= block.timestamp, "Future timestamp");
-         require(block.timestamp - timestamp <= 7 days, "Stale data");
+        require(block.timestamp - timestamp <= 7 days, "Stale data");
         // require(timestamp > block.timestamp - 7 days, "Stale data");
 
         // Advance epoch if needed
