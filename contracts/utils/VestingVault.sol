@@ -97,7 +97,7 @@ contract VestingVault is AccessControl, ReentrancyGuard {
         uint256 vestingMonths,
         bool revocable,
         string memory category
-    ) external onlyRole(OPERATOR_ROLE) returns (uint256) {
+    ) public onlyRole(OPERATOR_ROLE) returns (uint256) {
         require(beneficiary != address(0), "Invalid beneficiary");
         require(amount > 0, "Amount must be > 0");
         require(vestingMonths > 0, "Vesting duration must be > 0");
