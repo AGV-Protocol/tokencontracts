@@ -140,10 +140,8 @@ contract OracleVerification is AccessControl, Pausable {
         // Verify signature
         bytes32 messageHash = keccak256(abi.encodePacked(recipient, outputAmount, assetType, sourceId, timestamp));
 
-
         bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
         address recoveredSigner = ECDSA.recover(ethSignedHash, signature);
-
 
         if (recoveredSigner != source.signer) {
             source.failedSubmissions++;
