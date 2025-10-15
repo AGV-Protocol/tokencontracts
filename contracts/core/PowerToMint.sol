@@ -5,22 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
-interface IrGGP {
-    enum AssetType {
-        SOLAR,
-        ORCHARD,
-        COMPUTE
-    }
-
-    function mintFromOutput(
-        address recipient,
-        uint256 outputAmount,
-        AssetType assetType,
-        bytes32 sourceId,
-        uint256 timestamp,
-        bytes memory signature
-    ) external;
-}
+import "../interfaces/IrGGP.sol";
 
 interface IOracleVerification {
     function submitData(

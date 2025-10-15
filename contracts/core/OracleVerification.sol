@@ -5,23 +5,8 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import "../interfaces/IrGGP.sol";
 
-interface IrGGP {
-    enum AssetType {
-        SOLAR,
-        ORCHARD,
-        COMPUTE
-    }
-
-    function mintFromOutput(
-        address recipient,
-        uint256 outputAmount,
-        AssetType assetType,
-        bytes32 sourceId,
-        uint256 timestamp,
-        bytes memory signature
-    ) external;
-}
 
 /**
  * @title OracleVerification
