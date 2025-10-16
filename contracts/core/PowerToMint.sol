@@ -104,10 +104,9 @@ contract PowerToMint is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(OPERATOR_ROLE, admin);
         _grantRole(PAUSER_ROLE, admin);
 
-        // Initialize default configurations (from handbook)
-        _configureAsset(IrGGP.AssetType.SOLAR, 10 * 10 ** 18, 1, 100000);
-        _configureAsset(IrGGP.AssetType.ORCHARD, 25 * 10 ** 18, 1, 10000);
-        _configureAsset(IrGGP.AssetType.COMPUTE, 15 * 10 ** 18, 1, 10000);
+        _configureAsset(IrGGP.AssetType.SOLAR, 10 * 10 ** 18, 1 * 10 ** 18, 100000 * 10 ** 18);
+        _configureAsset(IrGGP.AssetType.ORCHARD, 25 * 10 ** 18, 1 * 10 ** 18, 10000 * 10 ** 18);
+        _configureAsset(IrGGP.AssetType.COMPUTE, 15 * 10 ** 18, 1 * 10 ** 18, 10000 * 10 ** 18);
     }
 
     /**
@@ -154,7 +153,7 @@ contract PowerToMint is AccessControl, ReentrancyGuard, Pausable {
             active: true,
             totalOutputRecorded: 0,
             totalRGGPMinted: 0,
-            lastMintTimestamp: block.timestamp
+            lastMintTimestamp: 0
         });
 
         sourceToNFT[sourceId] = tokenId;
@@ -189,7 +188,7 @@ contract PowerToMint is AccessControl, ReentrancyGuard, Pausable {
         bytes32 outputId = keccak256(abi.encodePacked(tokenId, asset.sourceId, outputAmount, timestamp));
 
         require(!processedOutputs[outputId], "Output already processed");
-        require(timestamp > asset.lastMintTimestamp, "Timestamp not sequential");
+        require(timestamp >= asset.lastMintTimestamp, "Timestamp not sequential");
         require(timestamp <= block.timestamp, "Future timestamp");
         require(block.timestamp - timestamp <= 7 days, "Data too old");
 
