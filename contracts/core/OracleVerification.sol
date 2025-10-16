@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "../interfaces/IrGGP.sol";
 
-
 /**
  * @title OracleVerification
  * @notice Verifies and validates oracle data before minting rGGP
