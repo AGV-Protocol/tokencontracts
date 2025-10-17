@@ -1,0 +1,63 @@
+@@ -26,6 +26,11 @@
+     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+
+-    IrGGP public immutable rGGP;
+-    IOracleVerification public oracleVerification;
++    uint256 constant ONE_TOKEN = 1e18;
++    uint256 constant TEN_TOKENS = 10 * ONE_TOKEN;
++    uint256 constant ONE_HUNDRED_THOUSAND_TOKENS = 100_000 * ONE_TOKEN;
++
++    IrGGP public immutable rGGP;
++    IOracleVerification public oracleVerification;
+
+@@ -87,6 +92,7 @@
+     event AssetDeactivated(uint256 indexed tokenId, string reason);
++    event OracleUpdated(address indexed newOracle);
+
+@@ -99,9 +105,9 @@
+-        _configureAsset(IrGGP.AssetType.SOLAR, 10 * 10 ** 18, 1 * 10 ** 18, 100000 * 10 ** 18);
+-        _configureAsset(IrGGP.AssetType.ORCHARD, 25 * 10 ** 18, 1 * 10 ** 18, 10000 * 10 ** 18);
+-        _configureAsset(IrGGP.AssetType.COMPUTE, 15 * 10 ** 18, 1 * 10 ** 18, 10000 * 10 ** 18);
++        _configureAsset(IrGGP.AssetType.SOLAR, TEN_TOKENS, ONE_TOKEN, ONE_HUNDRED_THOUSAND_TOKENS);
++        _configureAsset(IrGGP.AssetType.ORCHARD, 25 * ONE_TOKEN, ONE_TOKEN, 10_000 * ONE_TOKEN);
++        _configureAsset(IrGGP.AssetType.COMPUTE, 15 * ONE_TOKEN, ONE_TOKEN, 10_000 * ONE_TOKEN);
+
+@@ -185,7 +191,11 @@
+-        processedOutputs[outputId] = true;
+-
+-        // Calculate rGGP to mint
+-        uint256 rggpAmount = (outputAmount * config.ratePerUnit) / 10 ** 18;
+-
+-        // Update asset stats
++        // Calculate rGGP to mint
++        uint256 rggpAmount = (outputAmount * config.ratePerUnit) / ONE_TOKEN;
++
++        // Call oracle first; mark processed only after success
++        oracleVerification.submitData(asset.owner, outputAmount, asset.assetType, asset.sourceId, timestamp, signature);
++        processedOutputs[outputId] = true;
++
++        // Update asset stats
+
+@@ -230,10 +240,14 @@
+-        for (uint256 i = 0; i < tokenIds.length; i++) {
+-            // Process each output (reusing single output logic)
+-            this.processOutput(tokenIds[i], outputAmounts[i], timestamps[i], signatures[i]);
+-
+-            // Accumulate minted amount
+-            AssetConfig memory config = assetConfigs[nftAssets[tokenIds[i]].assetType];
+-            totalMinted += (outputAmounts[i] * config.ratePerUnit) / 10 ** 18;
+-        }
++        for (uint256 i = 0; i < tokenIds.length; ) {
++            _processOutputInternal(tokenIds[i], outputAmounts[i], timestamps[i], signatures[i]);
++            AssetConfig memory config = assetConfigs[nftAssets[tokenIds[i]].assetType];
++            totalMinted += (outputAmounts[i] * config.ratePerUnit) / ONE_TOKEN;
++            unchecked { ++i; }
++        }
+
+@@ -289,6 +303,9 @@
+     function updateOracleVerification(address newOracle) external onlyRole(DEFAULT_ADMIN_ROLE) {
+         require(newOracle != address(0), "Invalid oracle");
+-        oracleVerification = IOracleVerification(newOracle);
++        oracleVerification = IOracleVerification(newOracle);
++        emit OracleUpdated(newOracle);
+     }

@@ -37,6 +37,10 @@ contract PowerToMint is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
+    uint256 constant ONE_TOKEN = 1e18;
+    uint256 constant TEN_TOKENS = 10 * ONE_TOKEN;
+    uint256 constant ONE_HUNDRED_THOUSAND_TOKENS = 100_000 * ONE_TOKEN;
+
     IrGGP public immutable rGGP;
     IOracleVerification public oracleVerification;
 
@@ -93,6 +97,8 @@ contract PowerToMint is AccessControl, ReentrancyGuard, Pausable {
 
     event AssetDeactivated(uint256 indexed tokenId, string reason);
 
+    event OracleUpdated(address indexed newOracle);
+
     constructor(address _rGGP, address _oracleVerification, address admin) {
         require(_rGGP != address(0), "Invalid rGGP");
         require(_oracleVerification != address(0), "Invalid oracle");
@@ -104,9 +110,9 @@ contract PowerToMint is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(OPERATOR_ROLE, admin);
         _grantRole(PAUSER_ROLE, admin);
 
-        _configureAsset(IrGGP.AssetType.SOLAR, 10 * 10 ** 18, 1 * 10 ** 18, 100000 * 10 ** 18);
-        _configureAsset(IrGGP.AssetType.ORCHARD, 25 * 10 ** 18, 1 * 10 ** 18, 10000 * 10 ** 18);
-        _configureAsset(IrGGP.AssetType.COMPUTE, 15 * 10 ** 18, 1 * 10 ** 18, 10000 * 10 ** 18);
+        _configureAsset(IrGGP.AssetType.SOLAR, TEN_TOKENS, ONE_TOKEN, ONE_HUNDRED_THOUSAND_TOKENS);
+        _configureAsset(IrGGP.AssetType.ORCHARD, 25 * ONE_TOKEN, ONE_TOKEN, 10_000 * ONE_TOKEN);
+        _configureAsset(IrGGP.AssetType.COMPUTE, 15 * ONE_TOKEN, ONE_TOKEN, 10_000 * ONE_TOKEN);
     }
 
     /**
@@ -215,6 +221,49 @@ contract PowerToMint is AccessControl, ReentrancyGuard, Pausable {
         emit OutputProcessed(tokenId, asset.owner, outputAmount, rggpAmount, asset.assetType, asset.sourceId);
     }
 
+    function _processOutputInternal(
+        uint256 tokenId,
+        uint256 outputAmount,
+        uint256 timestamp,
+        bytes memory signature
+    ) 
+        internal {
+
+        NFTAsset storage asset = nftAssets[tokenId];
+        require(asset.active, "Asset inactive");
+        require(asset.owner != address(0), "Asset not registered");
+
+        AssetConfig memory config = assetConfigs[asset.assetType];
+        require(config.active, "Asset type inactive");
+        require(outputAmount >= config.minOutput, "Output too small");
+        require(outputAmount <= config.maxOutput, "Output too large");
+
+        bytes32 outputId = keccak256(abi.encodePacked(tokenId, asset.sourceId, outputAmount, timestamp));
+
+        require(!processedOutputs[outputId], "Output already processed");
+        require(timestamp >= asset.lastMintTimestamp, "Timestamp not sequential");
+        require(timestamp <= block.timestamp, "Future timestamp");
+        require(block.timestamp - timestamp <= 7 days, "Data too old");
+
+        uint256 rggpAmount = (outputAmount * config.ratePerUnit) / 10 ** 18;
+
+        // Call oracle first; mark processed only after success
+        oracleVerification.submitData(asset.owner, outputAmount, asset.assetType, asset.sourceId, timestamp, signature);
+        processedOutputs[outputId] = true;
+
+        asset.totalOutputRecorded += outputAmount;
+        asset.totalRGGPMinted += rggpAmount;
+        asset.lastMintTimestamp = timestamp;
+
+        Statistics storage stats = statistics[asset.assetType];
+        stats.totalMints++;
+        stats.totalRGGPMinted += rggpAmount;
+        stats.totalOutputProcessed += outputAmount;
+
+        emit OutputProcessed(tokenId, asset.owner, outputAmount, rggpAmount, asset.assetType, asset.sourceId);
+    }
+
+
     /**
      * @notice Batch process multiple outputs
      */
@@ -231,14 +280,12 @@ contract PowerToMint is AccessControl, ReentrancyGuard, Pausable {
 
         uint256 totalMinted = 0;
 
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            // Process each output (reusing single output logic)
-            this.processOutput(tokenIds[i], outputAmounts[i], timestamps[i], signatures[i]);
-
-            // Accumulate minted amount
-            AssetConfig memory config = assetConfigs[nftAssets[tokenIds[i]].assetType];
-            totalMinted += (outputAmounts[i] * config.ratePerUnit) / 10 ** 18;
-        }
+    for (uint256 i = 0; i < tokenIds.length; ) {
+        _processOutputInternal(tokenIds[i], outputAmounts[i], timestamps[i], signatures[i]);
+        AssetConfig memory config = assetConfigs[nftAssets[tokenIds[i]].assetType];
+        totalMinted += (outputAmounts[i] * config.ratePerUnit) / 10 ** 18;
+        unchecked { ++i; }
+    }
 
         emit BatchProcessed(tokenIds.length, totalMinted);
     }
@@ -324,6 +371,7 @@ contract PowerToMint is AccessControl, ReentrancyGuard, Pausable {
     function updateOracleVerification(address newOracle) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newOracle != address(0), "Invalid oracle");
         oracleVerification = IOracleVerification(newOracle);
+        emit OracleUpdated(newOracle);
     }
 
     /**
