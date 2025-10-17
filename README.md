@@ -14,12 +14,12 @@ AGV Protocol bridges physical assets with blockchain technology, enabling transp
 
 ### Key Features
 
-✅ **Verified Output Minting** - Tokens minted only from oracle-verified physical production  
-✅ **DAO Governance** - Two-tier voting system (NFT holders + GVT stakers)  
-✅ **Sustainable Economics** - Bonding curves, vesting, and buyback mechanisms  
-✅ **Multi-Chain Ready** - Designed for BNB Chain and Arbitrum  
-✅ **Security First** - Comprehensive testing, access controls, emergency pauses  
-✅ **Audit Ready** - Clean code, extensive documentation, 138+ tests
+ **Verified Output Minting** - Tokens minted only from oracle-verified physical production  
+ **DAO Governance** - Two-tier voting system (NFT holders + GVT stakers)  
+ **Sustainable Economics** - Bonding curves, vesting, and buyback mechanisms  
+ **Multi-Chain Ready** - Designed for BNB Chain and Arbitrum  
+ **Security First** - Comprehensive testing, access controls, emergency pauses  
+ **Audit Ready** - Clean code, extensive documentation, 138+ tests
 
 ## 📊 Architecture
 
