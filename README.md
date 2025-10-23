@@ -135,6 +135,7 @@ nano .env
 ```
 
 **Required .env variables:**
+=> Deployment Chain: BNB Smart Chain 
 
 ```bash
 PRIVATE_KEY=your_deployer_private_key
