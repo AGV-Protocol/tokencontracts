@@ -235,7 +235,7 @@ cast send $GVT_ADDRESS "grantRole(bytes32,address)" \
   --rpc-url $BSC_RPC_URL --private-key $PRIVATE_KEY
 ```
 
-See [DEPLOYMENT.md](https://claude.ai/chat/DEPLOYMENT.md) for complete guide.
+See [DEPLOYMENT.md]() for complete guide.
 
 
 ## 🔒 Security
@@ -298,12 +298,12 @@ cast call $GVT_ADDRESS "symbol()(string)" \
 
 ## 📖 Documentation
 
-- **[DEPLOYMENT.md](https://claude.ai/chat/DEPLOYMENT.md)** - Complete deployment guide
-- **[Test Documentation](https://claude.ai/chat/test/README.md)** - Testing guide
-- **[AGV Handbook](https://claude.ai/chat/docs/handbook.pdf)** - Protocol handbook
-- **[API Documentation](https://claude.ai/chat/docs/api.md)** - Contract interfaces
-- **[Governance Guide](https://claude.ai/chat/docs/governance.md)** - DAO operations
+- **[DEPLOYMENT.md]()** - Complete deployment guide
+- **[Test Documentation]()** - Testing guide
+- **[AGV Handbook]()** - Protocol handbook
+- **[API Documentation]()** - Contract interfaces
+- **[Governance Guide]()** - DAO operations
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](https://claude.ai/chat/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE]() file for details.
