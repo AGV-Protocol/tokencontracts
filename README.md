@@ -1,7 +1,7 @@
 
 # AGV Protocol - Tokenizing Real-World Assets
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue)](https://soliditylang.org/) [![Foundry](https://img.shields.io/badge/Foundry-Latest-green)](https://getfoundry.sh/) [![Tests](https://img.shields.io/badge/Tests-138%2B-success)](https://claude.ai/chat/test)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue)](https://soliditylang.org/) [![Foundry](https://img.shields.io/badge/Foundry-Latest-green)](https://getfoundry.sh/) 
 
 > Decentralized ecosystem tokenizing real-world assets (orchards, solar panels, compute farms) with verified physical output.
 
